@@ -1,0 +1,471 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+#define P1 HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)
+#define P2 HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13)
+#define P3 HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)
+#define P4 HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_15)
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+int ReadSensers(void)
+{
+//	GPIO_PinState P1 = HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_12);
+//	GPIO_PinState P2 = HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_13);
+//	GPIO_PinState P3 = HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_14);
+//	GPIO_PinState P4 = HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_15);
+	if(P1 == GPIO_PIN_RESET && P2 == GPIO_PIN_RESET && P3 == GPIO_PIN_RESET && P4 == GPIO_PIN_RESET)
+	{
+		return 0;   // 全都检测不到--死路
+	}
+	else if(P1 == GPIO_PIN_SET && P2 == GPIO_PIN_SET && P3 == GPIO_PIN_SET && P4 == GPIO_PIN_SET )
+	{
+		return 1;   // 十字路口 前进
+	}
+	else if(P1 == GPIO_PIN_SET && P2 == GPIO_PIN_SET && P3 == GPIO_PIN_SET && P4 == GPIO_PIN_RESET)
+	{
+		return 2;   // T字路口 左急转弯
+	}
+	else if(P1 == GPIO_PIN_RESET && P2 == GPIO_PIN_SET && P3 == GPIO_PIN_SET && P4 == GPIO_PIN_SET)
+	{
+		return 3;   // T字路口 右急转弯
+	}
+	else if(P1 == GPIO_PIN_SET && P2 == GPIO_PIN_RESET && P3 == GPIO_PIN_RESET && P4 == GPIO_PIN_RESET)
+	{
+		return 4;  // 只有 P1 检测到 左急转转
+	}
+	else if(P1 == GPIO_PIN_RESET && P2 == GPIO_PIN_RESET && P3 == GPIO_PIN_RESET && P4 == GPIO_PIN_SET)
+	{
+		return 5;  // 只有 P4 检测到 右急转弯
+	}
+	else if(P1 == GPIO_PIN_RESET && P2 == GPIO_PIN_SET && P3 == GPIO_PIN_RESET && P4 == GPIO_PIN_RESET)
+	{
+		return 6;  // 只有 P2 检测到 左转
+	}
+	else if(P1 == GPIO_PIN_RESET && P2 == GPIO_PIN_RESET && P3 == GPIO_PIN_SET && P4 == GPIO_PIN_RESET)
+	{
+		return 7;  // 只有 P3 检测到 右转
+	}
+	else if(P1 == GPIO_PIN_SET && P2 == GPIO_PIN_SET && P3 == GPIO_PIN_RESET && P4 == GPIO_PIN_RESET)
+	{
+		return 9;  // P1 和 P2 同时检测到 左转
+	}
+	else if(P1 == GPIO_PIN_RESET && P2 == GPIO_PIN_RESET && P3 == GPIO_PIN_SET && P4 == GPIO_PIN_SET)
+	{
+		return 10;  // P3 和 P4 同时检测到 右转
+	}
+	else if(P1 == GPIO_PIN_RESET && P2 == GPIO_PIN_SET && P3 == GPIO_PIN_SET && P4 == GPIO_PIN_RESET)
+	{
+		return 8;  // 只单单检测到P2和P3
+	}
+	return 11;
+}
+void Stop()
+{
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+}
+
+void Forward()
+{
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);     // 前左电机
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);     // 前右电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);     // 后右电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);     // 后左电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+}
+
+void PWM(int time)  // 针对后侧两个电机的PWM  50%
+{
+	int timer = 0;
+	while(timer <= time){
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);     // 后右电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);     // 后左电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+    HAL_Delay(5);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);     // 后右电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);     // 后左电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+    HAL_Delay(5);
+    timer += 10;
+	}
+}
+
+
+void SwiftLeft(int time)   // 左转弯
+{
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);     // 左侧电机不转
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);     // 右侧电机正转
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+    PWM(time);
+}
+
+void SwiftRight(int time)   // 右转弯
+{
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);     // 左侧电机正转
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);     // 右侧电机不转
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+    PWM(time);
+}
+
+void TurnAround()  // 转弯
+{
+	while(1)
+	{
+		if(P1 == GPIO_PIN_SET || P2 == GPIO_PIN_SET || P3 == GPIO_PIN_SET || P4 == GPIO_PIN_SET)
+		{
+			break;
+		}
+		else
+		{   // 急左转弯
+			SwiftLeft(10);
+		}
+	}
+}
+
+void Slow(int time)   // 所有情况都没有出现 默认慢行
+{
+	int timer = 0;
+	while(timer <= time){
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);     // 前左电机
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);     // 前右电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);     // 后右电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);     // 后左电机
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+    HAL_Delay(10);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+    HAL_Delay(15);
+    timer = timer + 25;
+}
+}
+
+void MoveRobot(int state)
+{
+
+    switch(state) {
+        case 0: // 死路 -- 掉头
+            TurnAround();
+            break;
+
+        case 1: // 十字路口 - 前进
+        	Forward();
+        	break;
+        case 8: // 直走
+            Forward();
+            break;
+
+        case 2: // 左急转弯
+            SwiftLeft(500);
+            break;
+
+        case 3: // 右急转弯
+        	SwiftRight(500);
+            break;
+
+        case 4: // 左急转弯
+        	SwiftLeft(500);
+        	break;
+        case 5: // 右急转弯
+        	SwiftRight(500);
+        	break;
+        case 6: // 左转
+            SwiftLeft(200);
+            break;
+
+        case 7: // 右转
+        	SwiftRight(200);
+            break;
+
+        case 9: // 左转
+        	SwiftLeft(200);
+        	break;
+
+        case 10: // 右转
+        	SwiftRight(200);
+        	break;
+
+        default:
+        	Slow(100);
+        	break;
+    }
+}
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  /* USER CODE BEGIN 2 */
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+//  while (1)
+//  {
+//    /* USER CODE END WHILE */
+//	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET){
+//	  MoveRobot(ReadSensers());
+//	  }
+//	  else
+//	  {
+//		  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_7,GPIO_PIN_RESET);
+//		  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_6,GPIO_PIN_RESET);
+//		  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_0,GPIO_PIN_RESET);
+//		  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_RESET);
+//		  HAL_Delay(10000);
+//	  }
+//    /* USER CODE BEGIN 3 */
+//  }
+//  /* USER CODE END 3 */
+//}
+  // 全局变量：记录小车运行状态（0=停止，1=运行）
+  uint8_t motorState = 0;
+
+  while (1)
+  {
+      /* USER CODE END WHILE */
+      
+      // 检测PA15按键是否被按下
+      if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET)
+      {
+          // 按键消抖：延时20ms后再次检测
+          HAL_Delay(20);
+          if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET)
+          {
+              // 状态切换：0->1 或 1->0
+              motorState = !motorState;
+              
+              // 如果是启动状态，立即读取传感器并控制电机
+              if (motorState) {
+                  MoveRobot(ReadSensers());
+              }
+              
+              // 等待按键释放，避免重复触发
+              while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET);
+              HAL_Delay(20); // 释放后再次消抖
+          }
+      }
+      
+      // 根据当前状态决定是否持续控制电机
+      if (motorState) {
+          MoveRobot(ReadSensers());
+      } else {
+          // 停止状态：关闭所有电机
+          HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+          HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+      }
+      
+      /* USER CODE BEGIN 3 */
+  }
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+
+  /* USER CODE END MX_GPIO_Init_1 */
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_1, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PA6 PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB0 PB1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+
+  /* USER CODE END MX_GPIO_Init_2 */
+}
+
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
